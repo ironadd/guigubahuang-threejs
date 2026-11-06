@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鬼谷八荒 · 登仙大成斗法演武 (Three.js)</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Three.js 渲染容器 -->
+  <div id="canvas-container"></div>
+
+  <!-- 屏幕飘字层 -->
+  <div id="damage-layer"></div>
+
+  <!-- 全屏屏幕边缘受击/领域滤镜 -->
+  <div id="screen-vignette"></div>
+
+  <!-- 大招水墨书法横幅特写 -->
+  <div id="cutin-banner" class="hidden">
+    <div class="cutin-bg"></div>
+    <div class="cutin-content">
+      <span class="cutin-seal" id="cutin-seal">神通</span>
+      <div class="cutin-text-group">
+        <div class="cutin-title" id="cutin-title">骤 天 万 剑 诀</div>
+        <div class="cutin-sub" id="cutin-sub">万剑归宗 · 苍穹裂变</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 顶部大妖 Boss 血条牌匾 -->
+  <header id="boss-hud">
+    <div class="boss-header-row">
+      <span class="boss-realm-tag">【登仙境 · 后期】</span>
+      <span class="boss-name" id="boss-name">太古凶神 · 九幽烛龙魔尊</span>
+      <span class="boss-cast-tag hidden" id="boss-cast-tag">蓄势：九幽裂地斩</span>
+    </div>
+    <div class="boss-hp-frame">
+      <div class="boss-hp-delay" id="boss-hp-delay" style="width: 100%"></div>
+      <div class="boss-hp-fill" id="boss-hp-fill" style="width: 100%"></div>
+      <div class="boss-hp-text" id="boss-hp-text">5,000,000 / 5,000,000</div>
+    </div>
+    <div class="boss-sub-row">
+      <span id="boss-phase-text">第一重魔躯 · 荒古凶威</span>
+      <span id="minion-count-text">秘境妖兽：0</span>
+    </div>
+  </header>
+
+  <!-- 右上角 秘境演武控制台 & 战绩统计 -->
+  <aside id="control-panel">
+    <div class="stats-box">
+      <div class="stat-item">
+        <span class="stat-label">实时秒伤 (DPS)</span>
+        <span class="stat-val gold" id="stat-dps">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">剑意连斩</span>
+        <span class="stat-val cyan" id="stat-combo">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">诛灭妖邪</span>
+        <span class="stat-val red" id="stat-kills">0</span>
+      </div>
+    </div>
+
+    <div class="panel-buttons">
+      <button id="btn-godmode" class="ctrl-btn active" title="开启后技能极速冷却、灵力无限，体验大成满词条爽感">
+        ⚡ 逆天满词条：开
+      </button>
+      <button id="btn-autoplay" class="ctrl-btn" title="AI 自动御风走位并连招施放领域、神通与仙法">
+        🤖 自动论道演示：关
+      </button>
+      <button id="btn-wave" class="ctrl-btn" title="立刻在仙台四周召唤大批冥山荒兽测试割草">
+        🐺 召唤冥山兽潮
+      </button>
+      <button id="btn-reset-boss" class="ctrl-btn" title="重塑满状态太古凶神 Boss 与自身状态">
+        👹 重塑九幽魔尊
+      </button>
+      <button id="btn-audio" class="ctrl-btn active" title="开关程序化合成古剑雷鸣音效">
+        🔊 仙音剑鸣：开
+      </button>
+    </div>
+    <div class="camera-hint">滚轮缩放视距 · WASD 御风 · 鼠标瞄准</div>
+  </aside>
+
+  <!-- 左下角 登仙修士状态与逆天改命 -->
+  <section id="player-hud">
+    <div class="buff-row" id="buff-bar"></div>
+
+    <div class="player-main-card">
+      <div class="realm-emblem">
+        <div class="realm-ring"></div>
+        <div class="realm-kanji">登仙</div>
+        <div class="realm-stage">圆满</div>
+      </div>
+
+      <div class="bars-container">
+        <div class="player-title-row">
+          <span class="player-name">太虚剑尊 · 天道筑基大成</span>
+          <span class="wing-badge">冥羽·烛照青鸾</span>
+        </div>
+
+        <div class="res-bar hp-bar">
+          <div class="res-fill" id="player-hp-fill" style="width: 100%"></div>
+          <div class="res-shield" id="player-shield-fill" style="width: 0%"></div>
+          <span class="res-label">体力</span>
+          <span class="res-num" id="player-hp-text">240,000 / 240,000</span>
+        </div>
+
+        <div class="res-bar mp-bar">
+          <div class="res-fill" id="player-mp-fill" style="width: 100%"></div>
+          <span class="res-label">灵力</span>
+          <span class="res-num" id="player-mp-text">85,000 / 85,000</span>
+        </div>
+
+        <div class="res-bar sp-bar">
+          <div class="res-fill" id="player-sp-fill" style="width: 100%"></div>
+          <span class="res-label">仙力</span>
+          <span class="res-num" id="player-sp-text">剑意充盈 · 可引仙法</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 逆天改命词条徽章栏 -->
+    <div class="destiny-row">
+      <span class="destiny-prefix">逆天改命</span>
+      <div class="destiny-chip" data-tip="【剑灵精通】本命金色剑灵环绕周身自动索敌斩击，每次命中汲取灵力并造成穿透剑伤">剑灵精通</div>
+      <div class="destiny-chip" data-tip="【武法精通】武技冷却大幅缩减，清风月影剑额外散射流光剑气">武法精通</div>
+      <div class="destiny-chip" data-tip="【兵刃专精】无需达成前置击破条件，可随时直接施展终极剑修神通【骤天万剑诀】">兵刃专精</div>
+      <div class="destiny-chip" data-tip="【血魔大法】飞剑与剑阵命中妖兽时，将部分伤害化为精纯气血回复自身体力">血魔大法</div>
+      <div class="destiny-chip" data-tip="【穿云电闪】御风移动持续叠加速度与剑伤加成，最高提升 35% 伤害">穿云电闪</div>
+      <div class="destiny-chip" data-tip="【天外有天】施展神通或仙法后，暴击率提升 40%，剑气辉光暴涨">天外有天</div>
+    </div>
+  </section>
+
+  <!-- 底部中央 八荒阵盘技能栏 -->
+  <footer id="skill-bar-wrapper">
+    <div id="skill-tooltip" class="hidden"></div>
+    <div id="skill-bar">
+      <div class="skill-slot" data-skill="lmb">
+        <div class="skill-type">武技</div>
+        <div class="skill-icon cyan-glow">月影<br/>清风</div>
+        <div class="skill-cd-overlay" id="cd-lmb"></div>
+        <div class="skill-cd-num" id="cdnum-lmb"></div>
+        <div class="skill-key">左键</div>
+      </div>
+
+      <div class="skill-slot" data-skill="rmb">
+        <div class="skill-type">绝技</div>
+        <div class="skill-icon purple-glow">万神<br/>绝影</div>
+        <div class="skill-cd-overlay" id="cd-rmb"></div>
+        <div class="skill-cd-num" id="cdnum-rmb"></div>
+        <div class="skill-key">右键</div>
+      </div>
+
+      <div class="skill-slot" data-skill="space">
+        <div class="skill-type">身法</div>
+        <div class="skill-icon wind-glow">九天<br/>逍遥</div>
+        <div class="skill-cd-overlay" id="cd-space"></div>
+        <div class="skill-cd-num" id="cdnum-space"></div>
+        <div class="skill-key">Space</div>
+      </div>
+
+      <div class="skill-slot" data-skill="artifact">
+        <div class="skill-type">法宝</div>
+        <div class="skill-icon thunder-glow">皇极<br/>剑匣</div>
+        <div class="skill-cd-overlay" id="cd-artifact"></div>
+        <div class="skill-cd-num" id="cdnum-artifact"></div>
+        <div class="skill-key">E</div>
+      </div>
+
+      <div class="skill-slot ultimate-slot" data-skill="domain">
+        <div class="skill-type">道魂领域</div>
+        <div class="skill-icon gold-glow">玄天<br/>剑域</div>
+        <div class="skill-cd-overlay" id="cd-domain"></div>
+        <div class="skill-cd-num" id="cdnum-domain"></div>
+        <div class="skill-key">Q</div>
+      </div>
+
+      <div class="skill-slot ultimate-slot" data-skill="divine">
+        <div class="skill-type">神通</div>
+        <div class="skill-icon amber-glow">骤天<br/>万剑</div>
+        <div class="skill-cd-overlay" id="cd-divine"></div>
+        <div class="skill-cd-num" id="cdnum-divine"></div>
+        <div class="skill-key">R</div>
+      </div>
+
+      <div class="skill-slot immortal-slot" data-skill="immortal">
+        <div class="skill-type">成道仙法</div>
+        <div class="skill-icon crimson-glow">太上<br/>诛仙</div>
+        <div class="skill-cd-overlay" id="cd-immortal"></div>
+        <div class="skill-cd-num" id="cdnum-immortal"></div>
+        <div class="skill-key">F</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 悬浮全局提示 -->
+  <div id="destiny-tooltip" class="hidden"></div>
+
+  <!-- 入阵引导弹窗 -->
+  <div id="intro-modal">
+    <div class="intro-box">
+      <div class="intro-badge">鬼谷八荒 · 登仙境大成斗法模拟</div>
+      <h1>荒古封神台 · 万剑诛魔</h1>
+      <p class="intro-desc">
+        化身<strong>登仙境圆满·风剑道魂大成剑修</strong>，背负<strong>羽化冥羽·烛照青鸾</strong>与<strong>逆天改命·剑灵精通</strong>，直面太古凶神「九幽烛龙魔尊」与冥山兽潮！
+      </p>
+      <div class="intro-grid">
+        <div class="intro-item"><kbd>左键</kbd> <span><b>武技·月影清风剑</b>：极速流光飞剑叠【剑斩】，每五击触发青鸾剑凤</span></div>
+        <div class="intro-item"><kbd>右键</kbd> <span><b>绝技·万神绝影剑</b>：天降天罡剑阵，引爆全场【剑斩】幻化追魂剑</span></div>
+        <div class="intro-item"><kbd>Space</kbd> <span><b>身法·九天逍遥风</b>：化风<b>无敌穿梭</b>聚拢妖兽，倾泻 360° 旋风剑雨</span></div>
+        <div class="intro-item"><kbd>E</kbd> <span><b>法宝·皇极天剑匣</b>：祭出仙阶剑匣镇场降下紫霄神雷，撑起混元剑盾</span></div>
+        <div class="intro-item"><kbd>Q</kbd> <span><b>领域·玄天三剑域</b>：展开太极八卦大阵，召唤<b>鎏金剑仙元神法相</b>同步挥斩</span></div>
+        <div class="intro-item"><kbd>R</kbd> <span><b>神通·骤天万剑诀</b>：苍穹化金漩，漫天剑雨洗地后<b>百丈太古仙剑</b>轰然坠落</span></div>
+        <div class="intro-item full"><kbd>F</kbd> <span><b>成道仙法·太上诛仙阵</b>：四方降下诛仙四剑，全屏红金次元空间切割绝杀！</span></div>
+      </div>
+      <div class="intro-actions">
+        <button id="btn-start-game">踏入仙台 · 御剑开战</button>
+        <button id="btn-start-auto" class="secondary">开启自动论道观赏大片</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,951 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:root {
+  --ink-bg: rgba(10, 14, 22, 0.84);
+  --ink-deep: rgba(6, 9, 15, 0.92);
+  --gold: #e8c472;
+  --gold-bright: #ffe59e;
+  --gold-dim: rgba(232, 196, 114, 0.38);
+  --cyan: #5bf0e6;
+  --crimson: #e03a3a;
+  --jade: #3cd99c;
+  --purple: #c57bff;
+  --font-serif: "STKaiti", "KaiTi", "STZhongsong", "Noto Serif SC", "SimSun", serif;
+  --font-ui: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #06090f;
+  color: #f4ebd9;
+  font-family: var(--font-ui);
+}
+
+#canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  cursor: crosshair;
+}
+
+#damage-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#screen-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  transition: box-shadow 0.35s ease;
+  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.65);
+}
+
+#screen-vignette.domain-active {
+  box-shadow: inset 0 0 110px rgba(235, 185, 70, 0.28), inset 0 0 40px rgba(80, 220, 255, 0.18);
+}
+
+#screen-vignette.immortal-active {
+  box-shadow: inset 0 0 150px rgba(230, 35, 55, 0.45), inset 0 0 50px rgba(255, 210, 90, 0.35);
+}
+
+#screen-vignette.hurt-flash {
+  box-shadow: inset 0 0 130px rgba(220, 20, 20, 0.68);
+}
+
+/* ================= 伤害跳字 ================= */
+.dmg-num {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-serif);
+  font-weight: 900;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+  will-change: transform, opacity;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.dmg-normal {
+  color: #e9f8ff;
+  font-size: 18px;
+}
+
+.dmg-crit {
+  color: #ffdf73;
+  font-size: 26px;
+  text-shadow: 0 0 12px rgba(255, 165, 20, 0.9), 0 2px 6px #000;
+}
+
+.dmg-slash-burst {
+  color: #df9eff;
+  font-size: 24px;
+  text-shadow: 0 0 14px rgba(190, 80, 255, 0.95), 0 2px 6px #000;
+}
+
+.dmg-immortal {
+  color: #ff5964;
+  font-size: 34px;
+  text-shadow: 0 0 18px rgba(255, 210, 80, 0.95), 0 0 8px #ff1e2d, 0 3px 8px #000;
+}
+
+.dmg-heal {
+  color: #54f59f;
+  font-size: 16px;
+}
+
+.dmg-player-hurt {
+  color: #ff4242;
+  font-size: 22px;
+}
+
+/* ================= 宣纸书法大招横幅 ================= */
+#cutin-banner {
+  position: fixed;
+  top: 19%;
+  left: 0;
+  width: 100%;
+  z-index: 25;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: cutinAnim 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#cutin-banner.hidden {
+  display: none;
+}
+
+.cutin-bg {
+  position: absolute;
+  width: 100%;
+  height: 112px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(8, 10, 16, 0.92) 18%,
+    rgba(24, 16, 12, 0.96) 50%,
+    rgba(8, 10, 16, 0.92) 82%,
+    transparent 100%
+  );
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  box-shadow: 0 0 45px rgba(232, 196, 114, 0.45);
+}
+
+.cutin-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 12px 48px;
+}
+
+.cutin-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  background: linear-gradient(135deg, #b81d1d, #7d0c0c);
+  border: 2px solid #ffb899;
+  border-radius: 6px;
+  color: #fff5eb;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: bold;
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+  box-shadow: 0 0 18px rgba(224, 58, 58, 0.8);
+  transform: rotate(-4deg);
+}
+
+.cutin-title {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 10px;
+  background: linear-gradient(180deg, #fffbe6 0%, #f5cb6c 55%, #d98a2b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 14px rgba(255, 180, 50, 0.65));
+}
+
+.cutin-sub {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: #e2d2b5;
+  letter-spacing: 6px;
+  margin-top: 2px;
+}
+
+@keyframes cutinAnim {
+  0% {
+    opacity: 0;
+    transform: scale(1.18) translateX(-50px);
+  }
+  14% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1.02) translateX(8px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96) translateX(40px);
+  }
+}
+
+/* ================= 顶部 Boss 牌匾 ================= */
+#boss-hud {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 60vw);
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(16, 12, 18, 0.88), rgba(8, 8, 12, 0.75));
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  padding: 8px 16px 9px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
+}
+
+.boss-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.boss-realm-tag {
+  color: #ff9d5c;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.boss-name {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: bold;
+  color: var(--gold-bright);
+  letter-spacing: 2px;
+  text-shadow: 0 0 12px rgba(232, 196, 114, 0.45);
+}
+
+.boss-cast-tag {
+  background: rgba(200, 32, 32, 0.88);
+  border: 1px solid #ff9980;
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  animation: pulseWarn 0.55s infinite alternate;
+}
+
+.boss-cast-tag.hidden {
+  display: none;
+}
+
+@keyframes pulseWarn {
+  from { transform: scale(1); box-shadow: 0 0 6px rgba(255, 60, 60, 0.5); }
+  to { transform: scale(1.06); box-shadow: 0 0 14px rgba(255, 80, 60, 0.95); }
+}
+
+.boss-hp-frame {
+  position: relative;
+  height: 18px;
+  background: rgba(20, 12, 14, 0.95);
+  border: 1px solid #9c7a44;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.boss-hp-delay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #ffe2b0, #ffffff);
+  transition: width 0.45s ease-out;
+}
+
+.boss-hp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #8a1119 0%, #d4262f 60%, #ff5c4d 100%);
+  box-shadow: 0 0 12px rgba(220, 40, 40, 0.7);
+  transition: width 0.08s linear;
+}
+
+.boss-hp-fill.enraged {
+  background: linear-gradient(90deg, #5e0b8a 0%, #c9184a 55%, #ff7b00 100%);
+}
+
+.boss-hp-text {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff8eb;
+  text-shadow: 0 1px 4px #000;
+}
+
+.boss-sub-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #c2b49b;
+}
+
+/* ================= 右上角控制台 ================= */
+#control-panel {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  width: 215px;
+  z-index: 12;
+  background: var(--ink-bg);
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  padding: 10px 12px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.stats-box {
+  border-bottom: 1px solid rgba(232, 196, 114, 0.22);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  color: #bfb39c;
+}
+
+.stat-val {
+  font-weight: bold;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+}
+.stat-val.gold { color: var(--gold-bright); }
+.stat-val.cyan { color: var(--cyan); }
+.stat-val.red { color: #ff7a7a; }
+
+.panel-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ctrl-btn {
+  background: rgba(26, 32, 46, 0.9);
+  border: 1px solid rgba(232, 196, 114, 0.35);
+  color: #dfd3bd;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.ctrl-btn:hover {
+  border-color: var(--gold-bright);
+  color: #fff;
+  background: rgba(50, 44, 34, 0.9);
+}
+
+.ctrl-btn.active {
+  background: linear-gradient(90deg, rgba(92, 68, 24, 0.9), rgba(42, 34, 20, 0.9));
+  border-color: var(--gold);
+  color: var(--gold-bright);
+  box-shadow: 0 0 10px rgba(232, 196, 114, 0.25);
+}
+
+.camera-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #968b78;
+  text-align: center;
+}
+
+/* ================= 左下角 登仙修士面板 ================= */
+#player-hud {
+  position: fixed;
+  left: 18px;
+  bottom: 16px;
+  z-index: 12;
+  width: 370px;
+  pointer-events: none;
+}
+
+.buff-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  min-height: 24px;
+}
+
+.buff-tag {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: bold;
+  background: rgba(14, 22, 34, 0.9);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 8px rgba(91, 240, 230, 0.25);
+}
+
+.buff-tag.gold {
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+  box-shadow: 0 0 8px rgba(255, 220, 120, 0.35);
+}
+
+.buff-tag.purple {
+  border-color: #d68fff;
+  color: #e8beff;
+}
+
+.buff-tag.crimson {
+  border-color: #ff6b6b;
+  color: #ffb3b3;
+}
+
+.player-main-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ink-bg);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 10px 12px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.65);
+}
+
+.realm-emblem {
+  position: relative;
+  width: 66px;
+  height: 66px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2e2212 0%, #120e0a 75%);
+  border: 2px solid var(--gold);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 18px rgba(232, 196, 114, 0.35);
+}
+
+.realm-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 229, 158, 0.55);
+  animation: spinSlow 14s linear infinite;
+}
+
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+
+.realm-kanji {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: bold;
+  color: var(--gold-bright);
+  line-height: 1.05;
+}
+
+.realm-stage {
+  font-size: 11px;
+  color: var(--cyan);
+  margin-top: 2px;
+}
+
+.bars-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.player-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1px;
+}
+
+.player-name {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--gold-bright);
+  font-weight: bold;
+}
+
+.wing-badge {
+  font-size: 11px;
+  color: #7ef9e5;
+  background: rgba(25, 80, 78, 0.6);
+  border: 1px solid rgba(126, 249, 229, 0.4);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.res-bar {
+  position: relative;
+  height: 15px;
+  background: rgba(8, 10, 15, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.res-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  transition: width 0.12s ease-out;
+}
+
+.res-shield {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  background: rgba(255, 238, 150, 0.45);
+  border-right: 2px solid #fff6b3;
+  transition: width 0.12s ease-out;
+}
+
+.hp-bar .res-fill {
+  background: linear-gradient(90deg, #911a24, #de3542);
+}
+
+.mp-bar .res-fill {
+  background: linear-gradient(90deg, #16528e, #2ea4e8);
+}
+
+.sp-bar .res-fill {
+  background: linear-gradient(90deg, #73399c, #d48735);
+}
+
+.res-label, .res-num {
+  position: relative;
+  z-index: 3;
+  text-shadow: 0 1px 3px #000;
+}
+
+.res-num {
+  font-family: Consolas, monospace;
+}
+
+/* 逆天改命词条栏 */
+.destiny-row {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  pointer-events: auto;
+}
+
+.destiny-prefix {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  color: var(--gold);
+  margin-right: 2px;
+}
+
+.destiny-chip {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(46, 34, 18, 0.92), rgba(22, 16, 10, 0.92));
+  border: 1px solid rgba(232, 196, 114, 0.5);
+  color: #f5deb3;
+  cursor: help;
+  transition: all 0.15s;
+}
+
+.destiny-chip:hover {
+  border-color: #fff0b3;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(232, 196, 114, 0.5);
+}
+
+#destiny-tooltip {
+  position: fixed;
+  z-index: 40;
+  max-width: 280px;
+  background: var(--ink-deep);
+  border: 1px solid var(--gold);
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #f2e6cf;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
+}
+
+#destiny-tooltip.hidden {
+  display: none;
+}
+
+/* ================= 底部中央 八荒阵盘技能栏 ================= */
+#skill-bar-wrapper {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#skill-tooltip {
+  margin-bottom: 10px;
+  width: 340px;
+  background: var(--ink-deep);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+#skill-tooltip.hidden {
+  display: none;
+}
+
+.tip-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: bold;
+  color: var(--gold-bright);
+  margin-bottom: 4px;
+}
+
+.tip-meta {
+  font-size: 11px;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+
+.tip-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #e6dac3;
+}
+
+#skill-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(14, 18, 28, 0.86), rgba(8, 10, 16, 0.94));
+  border: 1px solid var(--gold-dim);
+  border-radius: 10px;
+  padding: 9px 14px 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75);
+}
+
+.skill-slot {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  background: radial-gradient(circle at 50% 35%, #232b3d, #0d111a);
+  border: 1.5px solid rgba(212, 180, 110, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.skill-slot.ultimate-slot {
+  width: 66px;
+  height: 66px;
+  border-color: #e8c472;
+}
+
+.skill-slot.immortal-slot {
+  width: 70px;
+  height: 70px;
+  border-width: 2px;
+  border-color: #ff6b6b;
+  box-shadow: 0 0 16px rgba(235, 64, 64, 0.35);
+}
+
+.skill-slot:hover, .skill-slot.casting {
+  transform: translateY(-3px) scale(1.04);
+  border-color: #fff0b8;
+  box-shadow: 0 0 18px rgba(255, 215, 110, 0.55);
+}
+
+.skill-type {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  color: #cbbd9f;
+  z-index: 3;
+  letter-spacing: 0.5px;
+}
+
+.skill-icon {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.12;
+  text-align: center;
+  z-index: 2;
+  margin-top: 4px;
+}
+
+.cyan-glow { color: #90fff9; text-shadow: 0 0 10px rgba(60, 240, 230, 0.7); }
+.purple-glow { color: #e2b0ff; text-shadow: 0 0 10px rgba(185, 95, 255, 0.75); }
+.wind-glow { color: #9effcd; text-shadow: 0 0 10px rgba(80, 245, 175, 0.75); }
+.thunder-glow { color: #b8d8ff; text-shadow: 0 0 10px rgba(95, 165, 255, 0.8); }
+.gold-glow { color: #ffe596; text-shadow: 0 0 12px rgba(255, 198, 65, 0.85); }
+.amber-glow { color: #ffca7a; text-shadow: 0 0 12px rgba(255, 145, 35, 0.85); }
+.crimson-glow { color: #ff9c9c; text-shadow: 0 0 14px rgba(255, 50, 65, 0.95); }
+
+.skill-cd-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0%;
+  background: rgba(5, 8, 14, 0.82);
+  z-index: 4;
+  transition: height 0.06s linear;
+}
+
+.skill-cd-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  font-family: Consolas, monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffe6a3;
+  text-shadow: 0 1px 4px #000;
+}
+
+.skill-key {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  z-index: 6;
+  font-size: 10px;
+  font-family: Consolas, sans-serif;
+  color: #fff2cc;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(232, 196, 114, 0.35);
+}
+
+/* ================= 入阵封面弹窗 ================= */
+#intro-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: radial-gradient(circle at center, rgba(12, 18, 28, 0.78), rgba(4, 6, 10, 0.94));
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#intro-modal.hidden {
+  display: none;
+}
+
+.intro-box {
+  max-width: 720px;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(20, 24, 34, 0.95), rgba(10, 12, 18, 0.98));
+  border: 1.5px solid var(--gold);
+  border-radius: 12px;
+  padding: 28px 34px;
+  box-shadow: 0 0 60px rgba(232, 196, 114, 0.22), 0 20px 50px rgba(0, 0, 0, 0.85);
+  text-align: center;
+}
+
+.intro-badge {
+  display: inline-block;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--cyan);
+  border: 1px solid rgba(91, 240, 230, 0.45);
+  background: rgba(20, 60, 68, 0.4);
+  padding: 3px 14px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+
+.intro-box h1 {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  letter-spacing: 6px;
+  color: var(--gold-bright);
+  margin-bottom: 12px;
+  text-shadow: 0 0 20px rgba(232, 196, 114, 0.45);
+}
+
+.intro-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #d8ccb8;
+  margin-bottom: 20px;
+}
+
+.intro-desc strong {
+  color: #ffe394;
+}
+
+.intro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.intro-item {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(232, 196, 114, 0.22);
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #ddd2be;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.intro-item.full {
+  grid-column: span 2;
+  border-color: rgba(255, 105, 105, 0.45);
+  background: rgba(90, 18, 24, 0.28);
+}
+
+.intro-item kbd {
+  background: linear-gradient(180deg, #3b3020, #1f1910);
+  border: 1px solid var(--gold);
+  color: var(--gold-bright);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.intro-item b {
+  color: #fff2c6;
+}
+
+.intro-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.intro-actions button {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  padding: 11px 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#btn-start-game {
+  background: linear-gradient(180deg, #f2ca74, #b57c24);
+  border: 1px solid #fff0b8;
+  color: #1c1204;
+  box-shadow: 0 0 24px rgba(242, 202, 116, 0.5);
+}
+
+#btn-start-game:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 34px rgba(255, 220, 130, 0.85);
+}
+
+#btn-start-auto {
+  background: rgba(24, 36, 48, 0.9);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+}
+
+#btn-start-auto:hover {
+  background: rgba(36, 68, 84, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(91, 240, 230, 0.4);
+}
