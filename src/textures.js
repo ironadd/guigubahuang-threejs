@@ -17,20 +17,9 @@ export function createBaguaTexture({
 
   ctx.clearRect(0, 0, size, size);
 
-  // 柔和径向底光
-  const bgGrad = ctx.createRadialGradient(cx, cy, 20, cx, cy, 495);
-  bgGrad.addColorStop(0, 'rgba(255, 220, 120, 0.16)');
-  bgGrad.addColorStop(0.55, 'rgba(91, 240, 230, 0.08)');
-  bgGrad.addColorStop(0.92, 'rgba(255, 210, 100, 0.14)');
-  bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = bgGrad;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 495, 0, Math.PI * 2);
-  ctx.fill();
-
   ctx.save();
   ctx.shadowColor = mainColor;
-  ctx.shadowBlur = 14;
+  ctx.shadowBlur = 4;
 
   // 多重同心阵环
   const rings = [
@@ -143,9 +132,9 @@ export function createBaguaTexture({
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 阳鱼半弧
+    // 阳鱼半弧（清透薄染不遮挡地面与预警圈）
     ctx.fillStyle = mainColor;
-    ctx.globalAlpha = 0.72;
+    ctx.globalAlpha = 0.18;
     ctx.beginPath();
     ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2, false);
     ctx.arc(cx, cy + r / 2, r / 2, Math.PI / 2, -Math.PI / 2, true);
@@ -154,7 +143,7 @@ export function createBaguaTexture({
     ctx.fill();
 
     // 双鱼眼
-    ctx.globalAlpha = 0.95;
+    ctx.globalAlpha = 0.55;
     ctx.fillStyle = subColor;
     ctx.beginPath();
     ctx.arc(cx, cy - r / 2, 13, 0, Math.PI * 2);
@@ -415,21 +404,22 @@ function _getSwordMat(hex, mult) {
   return mat;
 }
 
-// 6. 构建精致古风仙剑 3D 模型（剑尖朝向 +Z 轴，方便 lookAt 目标点！）
+// 6. 构建精致古风仙剑 3D 模型（剑尖朝向 +Z 轴，清透玉铁质感不刺眼）
 export function createImmortalSwordMesh({
-  bladeColor = 0x7cfbf2,
-  coreColor = 0xffffff,
-  guardColor = 0xf2c96b,
+  bladeColor = 0x5cdbd3,
+  coreColor = 0xe8fbff,
+  guardColor = 0xc99b42,
   scale = 1.0,
-  glowIntensity = 2.1
+  glowIntensity = 0.95
 } = {}) {
   const geos = _getSwordGeos();
   const group = new THREE.Group();
 
-  const bladeMat = _getSwordMat(bladeColor, glowIntensity);
-  const coreMat = _getSwordMat(coreColor, glowIntensity * 1.25);
-  const guardMat = _getSwordMat(guardColor, 1.35);
-  const gripMat = _getSwordMat(0x3b2a1a, 1.0);
+  const clampedGlow = Math.min(1.06, glowIntensity * 0.46);
+  const bladeMat = _getSwordMat(bladeColor, clampedGlow);
+  const coreMat = _getSwordMat(coreColor, Math.min(1.12, clampedGlow * 1.15));
+  const guardMat = _getSwordMat(guardColor, 0.85);
+  const gripMat = _getSwordMat(0x2b1e14, 1.0);
 
   group.add(new THREE.Mesh(geos.bladeShape, bladeMat));
   group.add(new THREE.Mesh(geos.coreGeo, coreMat));

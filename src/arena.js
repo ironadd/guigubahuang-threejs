@@ -213,12 +213,11 @@ export class ImmortalArena {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const mat = new THREE.PointsMaterial({
-      size: 0.55,
+      size: 0.38,
       map: createSparkTexture(),
-      color: 0x8ef7f0,
+      color: 0x6ec7c0,
       transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.32,
       depthWrite: false
     });
     this.dustPoints = new THREE.Points(geo, mat);
@@ -226,52 +225,36 @@ export class ImmortalArena {
   }
 
   _buildSkyPortal() {
-    // 神通/仙法施展时高空显现的巨型天门法阵漩涡
-    const tex = createBaguaTexture({
-      mainColor: '#ffdf80',
-      subColor: '#ff6b4a',
-      drawTaiji: false
-    });
-    const geo = new THREE.PlaneGeometry(76, 76);
-    geo.rotateX(Math.PI / 2);
+    // 禁用横亘在俯视相机前的高空巨型发光面片，避免挡镜头造成光污染
+    const geo = new THREE.PlaneGeometry(1, 1);
     this.skyPortalMat = new THREE.MeshBasicMaterial({
-      map: tex,
       transparent: true,
       opacity: 0,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     this.skyPortal = new THREE.Mesh(geo, this.skyPortalMat);
-    this.skyPortal.position.y = 32;
-    this.scene.add(this.skyPortal);
+    this.skyPortal.visible = false;
     this.skyPortalTargetOpacity = 0;
   }
 
   setMood(mood, duration = 3.0) {
     this.moodTimer = duration;
+    this.skyPortalTargetOpacity = 0;
     if (mood === 'divine') {
-      this.targetFogColor.setHex(0x1c1408);
-      this.targetAmbient.setHex(0x9e7e46);
-      this.skyPortalMat.color.setRGB(1.8, 1.4, 0.6);
-      this.skyPortalTargetOpacity = 0.85;
+      this.targetFogColor.setHex(0x0d0b07);
+      this.targetAmbient.setHex(0x6e6246);
     } else if (mood === 'immortal') {
-      this.targetFogColor.setHex(0x1f060c);
-      this.targetAmbient.setHex(0x8f2d3c);
-      this.skyPortalMat.color.setRGB(2.2, 0.45, 0.55);
-      this.skyPortalTargetOpacity = 0.92;
+      this.targetFogColor.setHex(0x110609);
+      this.targetAmbient.setHex(0x6b3540);
     } else if (mood === 'domain') {
-      this.targetFogColor.setHex(0x0b1522);
-      this.targetAmbient.setHex(0x6d8ca8);
-      this.skyPortalTargetOpacity = 0.25;
+      this.targetFogColor.setHex(0x080f18);
+      this.targetAmbient.setHex(0x58718a);
     } else if (mood === 'boss_enrage') {
-      this.targetFogColor.setHex(0x180816);
-      this.targetAmbient.setHex(0x703b66);
-      this.skyPortalTargetOpacity = 0;
+      this.targetFogColor.setHex(0x100712);
+      this.targetAmbient.setHex(0x5c3856);
     } else {
       this.targetFogColor.setHex(0x070b14);
       this.targetAmbient.setHex(0x526b8c);
-      this.skyPortalTargetOpacity = 0;
     }
   }
 

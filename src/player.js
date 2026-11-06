@@ -198,13 +198,12 @@ export class ImmortalPlayer {
 
     // 4. 脚下御风剑莲光环 & 混元护盾球 & 九天逍遥风龙卷网格
     const footLotus = new THREE.Mesh(
-      new THREE.RingGeometry(0.75, 1.05, 32).rotateX(-Math.PI / 2),
+      new THREE.RingGeometry(0.82, 0.98, 32).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({
-        color: new THREE.Color(0x66fcf2).multiplyScalar(1.8),
+        color: new THREE.Color(0x4fc7bf),
         transparent: true,
-        opacity: 0.65,
+        opacity: 0.36,
         side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
         depthWrite: false
       })
     );
@@ -214,36 +213,34 @@ export class ImmortalPlayer {
 
     // 护盾光球
     this.shieldBubble = new THREE.Mesh(
-      new THREE.SphereGeometry(1.75, 20, 16),
+      new THREE.SphereGeometry(1.75, 18, 14),
       new THREE.MeshBasicMaterial({
-        color: new THREE.Color(0xffe082).multiplyScalar(1.5),
+        color: new THREE.Color(0xd4b259),
         transparent: true,
         opacity: 0,
         wireframe: true,
-        blending: THREE.AdditiveBlending,
         depthWrite: false
       })
     );
     this.shieldBubble.position.y = 1.6;
     this.root.add(this.shieldBubble);
 
-    // 九天逍遥风（风身法无敌飓风特效组）
+    // 九天逍遥风（风身法无敌飓风特效组：清透青风细丝）
     this.tornadoGroup = new THREE.Group();
     this.tornadoGroup.visible = false;
     for (let layer = 0; layer < 4; layer++) {
-      const r = 1.1 + layer * 0.68;
+      const r = 1.05 + layer * 0.58;
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(r, 0.065, 6, 28),
+        new THREE.TorusGeometry(r, 0.035, 6, 28),
         new THREE.MeshBasicMaterial({
-          color: new THREE.Color(layer % 2 === 0 ? 0x6effcb : 0x62f4ff).multiplyScalar(2.2),
+          color: new THREE.Color(layer % 2 === 0 ? 0x52d9ad : 0x4cc7d9),
           transparent: true,
-          opacity: 0.8,
-          blending: THREE.AdditiveBlending,
+          opacity: 0.34,
           depthWrite: false
         })
       );
       ring.rotation.x = Math.PI / 2 + (layer % 2 === 0 ? 0.16 : -0.16);
-      ring.position.y = 0.5 + layer * 0.85;
+      ring.position.y = 0.5 + layer * 0.78;
       this.tornadoGroup.add(ring);
     }
     this.root.add(this.tornadoGroup);
@@ -258,15 +255,14 @@ export class ImmortalPlayer {
     const wing = new THREE.Group();
     const feathers = 6;
     for (let i = 0; i < feathers; i++) {
-      const len = 1.85 - i * 0.2;
-      const geo = new THREE.ConeGeometry(0.11, len, 4);
+      const len = 1.75 - i * 0.2;
+      const geo = new THREE.ConeGeometry(0.09, len, 4);
       geo.translate(0, len * 0.5, 0);
       const isGold = i % 2 === 1;
       const mat = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(isGold ? 0xffd875 : 0x56f7e8).multiplyScalar(1.9),
+        color: new THREE.Color(isGold ? 0xd9b257 : 0x45c7ba),
         transparent: true,
-        opacity: 0.85,
-        blending: THREE.AdditiveBlending,
+        opacity: 0.52,
         depthWrite: false
       });
       const f = new THREE.Mesh(geo, mat);
@@ -277,24 +273,22 @@ export class ImmortalPlayer {
     return wing;
   }
 
-  // 构建半透明璀璨黄金剑仙元神巨像
+  // 构建半透明清透黄金剑仙元神虚影（灵体薄纱感，不晃眼不遮挡）
   _createGoldenAvatar() {
     const g = new THREE.Group();
-    g.position.set(0, 0.6, -1.35);
+    g.position.set(0, 0.6, -1.55);
 
     const spiritMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xffcf60).multiplyScalar(1.9),
+      color: new THREE.Color(0xd9ab48),
       transparent: true,
-      opacity: 0.48,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.16,
       depthWrite: false
     });
     const wireMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xfff0a8).multiplyScalar(2.2),
+      color: new THREE.Color(0xe8c774),
       wireframe: true,
       transparent: true,
-      opacity: 0.45,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.22,
       depthWrite: false
     });
 
@@ -308,18 +302,18 @@ export class ImmortalPlayer {
     const head = new THREE.Mesh(new THREE.OctahedronGeometry(0.68, 1), spiritMat);
     head.position.y = 7.25;
 
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.08, 6, 32), wireMat);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.05, 6, 32), wireMat);
     halo.position.set(0, 6.8, -0.5);
 
     // 元神巨剑右臂枢轴（随左键挥砍摆动！）
     this.avatarSwordPivot = new THREE.Group();
     this.avatarSwordPivot.position.set(1.9, 5.4, 0.4);
     const giantAvatarSword = createImmortalSwordMesh({
-      bladeColor: 0xffd666,
-      coreColor: 0xffffff,
-      guardColor: 0xffae33,
-      scale: 2.35,
-      glowIntensity: 2.4
+      bladeColor: 0xe0b653,
+      coreColor: 0xfff5d6,
+      guardColor: 0xb87e28,
+      scale: 2.25,
+      glowIntensity: 1.6
     });
     this.avatarSwordPivot.add(giantAvatarSword);
 
@@ -330,17 +324,17 @@ export class ImmortalPlayer {
   // 逆天改命：【剑灵精通】自动索敌本命金剑灵
   _buildSwordSpirit() {
     this.spiritSword = createImmortalSwordMesh({
-      bladeColor: 0xffe066,
-      coreColor: 0xffffff,
-      guardColor: 0xffaa33,
-      scale: 0.82,
-      glowIntensity: 2.4
+      bladeColor: 0xe6be53,
+      coreColor: 0xfff6d9,
+      guardColor: 0xc28529,
+      scale: 0.8,
+      glowIntensity: 1.6
     });
     this.spiritPos = new THREE.Vector3(2, 2.2, 14);
     this.spiritVel = new THREE.Vector3(0, 0, 1);
     this.spiritSword.position.copy(this.spiritPos);
     this.scene.add(this.spiritSword);
-    this.spiritRibbon = new SwordRibbon(this.scene, 14, 0.36, 0xffd45e);
+    this.spiritRibbon = new SwordRibbon(this.scene, 8, 0.15, 0xd9b04c);
     this.spiritRibbon.reset(this.spiritPos);
     this.spiritHitCd = 0;
   }
@@ -382,14 +376,14 @@ export class ImmortalPlayer {
     this.scene.add(this.artifactGroup);
   }
 
-  // 道魂领域：【玄天三剑域】立体八卦剑阵
+  // 道魂领域：【玄天三剑域】古朴暗金八卦剑阵（清透不盖红圈）
   _buildDomainGroup() {
     this.domainGroup = new THREE.Group();
     this.domainGroup.visible = false;
 
     const texOuter = createBaguaTexture({
-      mainColor: '#ffe082',
-      subColor: '#5cf7ee',
+      mainColor: '#d4af5a',
+      subColor: '#48b8b0',
       drawTaiji: true
     });
     const outerMesh = new THREE.Mesh(
@@ -397,27 +391,25 @@ export class ImmortalPlayer {
       new THREE.MeshBasicMaterial({
         map: texOuter,
         transparent: true,
-        opacity: 0.72,
-        blending: THREE.AdditiveBlending,
+        opacity: 0.25,
         depthWrite: false
       })
     );
-    outerMesh.position.y = 0.07;
+    outerMesh.position.y = 0.04;
     this.domainOuter = outerMesh;
     this.domainGroup.add(outerMesh);
 
     const innerMesh = new THREE.Mesh(
-      new THREE.RingGeometry(21.8, 22.5, 64).rotateX(-Math.PI / 2),
+      new THREE.RingGeometry(22.1, 22.4, 64).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({
-        color: new THREE.Color(0xffdc78).multiplyScalar(2.0),
+        color: new THREE.Color(0xd9b359),
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.36,
         side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
         depthWrite: false
       })
     );
-    innerMesh.position.y = 0.09;
+    innerMesh.position.y = 0.05;
     this.domainGroup.add(innerMesh);
 
     // 领域八方镇域古剑与光柱
@@ -545,23 +537,23 @@ export class ImmortalPlayer {
       });
     });
 
-    // 羽化冥羽被动：每 5 次武技触发【烛照青鸾·炽炎剑凤波】
-    if (this.lmbCount % 5 === 0) {
+    // 羽化冥羽被动：每 6 次武技触发【烛照青鸾·剑凤波】
+    if (this.lmbCount % 6 === 0) {
       sfx.playGiantSlash();
       this._spawnCrescentWave({
         origin: this.pos.clone().setY(1.45),
         dir: baseDir,
         speed: 36,
-        scale: 1.55,
-        color: 0x4effd8,
-        damage: 78000 * this.getDamageMultiplier(),
+        scale: 1.35,
+        color: 0x45cfc0,
+        damage: 92000 * this.getDamageMultiplier(),
         maxDist: 38,
         addMarks: 3
       });
     }
 
-    // 道魂领域激活时：背后【丈六鎏金剑仙元神】同步挥出十米黄金月牙巨斩！
-    if (this.domainTimer > 0 && this.lmbCount % 2 === 0) {
+    // 道魂领域激活时：背后【丈六鎏金剑仙元神】挥出黄金月牙斩（降低频次、单次威力翻倍，画面清爽利落）
+    if (this.domainTimer > 0 && this.lmbCount % 4 === 0) {
       if (this.avatarSwordPivot) {
         this.avatarSwordPivot.rotation.x = Math.sin(this.lmbCount * 1.9) * 0.85;
         this.avatarSwordPivot.rotation.y = Math.cos(this.lmbCount * 1.9) * 0.55;
@@ -570,11 +562,11 @@ export class ImmortalPlayer {
         origin: this.pos.clone().setY(1.85),
         dir: baseDir,
         speed: 38,
-        scale: 2.35,
-        color: 0xffd463,
-        damage: 105000 * this.getDamageMultiplier(),
+        scale: 1.95,
+        color: 0xd9ae4c,
+        damage: 210000 * this.getDamageMultiplier(),
         maxDist: 42,
-        addMarks: 2
+        addMarks: 4
       });
     }
   }
@@ -718,11 +710,11 @@ export class ImmortalPlayer {
     const targetCenter =
       enemyManager.boss && !enemyManager.boss.dead ? enemyManager.boss.pos.clone() : aimPoint.clone();
 
-    // 第一阶段：54 柄黄金流光天剑暴雨洗地 (0 ~ 1.65s)
-    for (let i = 0; i < 54; i++) {
-      this._schedule(0.15 + i * 0.028, () => {
+    // 第一阶段：26 柄黄金天剑利落洗地 (0 ~ 1.5s，去掉光柱遮挡，保留清晰剑体与地面细环)
+    for (let i = 0; i < 26; i++) {
+      this._schedule(0.15 + i * 0.052, () => {
         const ang = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * 26;
+        const r = Math.sqrt(Math.random()) * 25;
         const p = new THREE.Vector3(
           targetCenter.x + Math.cos(ang) * r,
           0,
@@ -732,10 +724,10 @@ export class ImmortalPlayer {
         if (clampD > ARENA_RADIUS - 2) p.multiplyScalar((ARENA_RADIUS - 2) / clampD);
 
         this._dropSkySword(p, {
-          color: 0xffd466,
-          scale: 1.5,
+          color: 0xd9ae4c,
+          scale: 1.45,
           radius: 4.8,
-          damage: 58000 * this.getDamageMultiplier(),
+          damage: 118000 * this.getDamageMultiplier(),
           enemyManager
         });
       });
@@ -857,8 +849,7 @@ export class ImmortalPlayer {
       sword.position.set(pos.x, 8.5, pos.z);
       this.scene.add(sword);
 
-      this.vfx.spawnSkyPillar(pos, 2.8, 42, cornerColors[i], 3.2);
-      this.vfx.spawnShockwave(pos, 11, cornerColors[i], 0.6);
+      this.vfx.spawnShockwave(pos, 10, cornerColors[i], 0.5);
 
       this.vfx.transientMeshes.push({
         mesh: sword,
@@ -871,10 +862,10 @@ export class ImmortalPlayer {
       });
     }
 
-    // 地面展开巨型血金诛仙大阵图
+    // 地面展开古朴暗红金诛仙大阵图（低透明度水墨印记，不闪屏不盖红圈）
     const zhuXianTex = createBaguaTexture({
-      mainColor: '#ff3b56',
-      subColor: '#ffd466',
+      mainColor: '#c92e45',
+      subColor: '#c9a246',
       runeText: '诛仙戮仙陷仙绝仙太上敕令万神诛魔天地无极剑界归墟',
       drawTaiji: false
     });
@@ -883,12 +874,11 @@ export class ImmortalPlayer {
       new THREE.MeshBasicMaterial({
         map: zhuXianTex,
         transparent: true,
-        opacity: 0.9,
-        blending: THREE.AdditiveBlending,
+        opacity: 0.28,
         depthWrite: false
       })
     );
-    arrayMesh.position.y = 0.11;
+    arrayMesh.position.y = 0.06;
     this.scene.add(arrayMesh);
     this.vfx.transientMeshes.push({
       mesh: arrayMesh,
@@ -897,8 +887,8 @@ export class ImmortalPlayer {
       age: 0,
       duration: 3.3,
       onUpdate(t) {
-        arrayMesh.rotation.z = t * 2.4;
-        arrayMesh.material.opacity = t < 0.82 ? 0.9 : (1 - (t - 0.82) / 0.18) * 0.9;
+        arrayMesh.rotation.z = t * 1.6;
+        arrayMesh.material.opacity = t < 0.82 ? 0.28 : (1 - (t - 0.82) / 0.18) * 0.28;
       }
     });
 
@@ -1001,7 +991,7 @@ export class ImmortalPlayer {
     mesh.lookAt(targetLook);
     this.scene.add(mesh);
 
-    const ribbon = new SwordRibbon(this.scene, 10, 0.3 * scale, color);
+    const ribbon = new SwordRibbon(this.scene, 7, 0.15 * scale, color);
     ribbon.reset(pos);
 
     this.flyingSwords.push({
@@ -1033,12 +1023,11 @@ export class ImmortalPlayer {
     addMarks = 2
   }) {
     const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(color).multiplyScalar(2.4),
+      color: new THREE.Color(color).multiplyScalar(1.02),
       vertexColors: true,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.54,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     const mesh = new THREE.Mesh(this.crescentGeo, mat);
@@ -1061,12 +1050,12 @@ export class ImmortalPlayer {
     });
   }
 
-  // 天罡巨剑垂直坠落打击
-  _dropSkySword(targetPos, { color = 0xd58aff, scale = 1.6, radius = 4.8, damage = 60000, enemyManager }) {
+  // 天罡巨剑垂直坠落打击（只留实体古剑与细地面剑环，去掉光柱遮挡）
+  _dropSkySword(targetPos, { color = 0xb873e8, scale = 1.5, radius = 4.8, damage = 60000, enemyManager }) {
     const sword = createImmortalSwordMesh({
       bladeColor: color,
       scale,
-      glowIntensity: 2.3
+      glowIntensity: 1.5
     });
     sword.rotation.x = Math.PI / 2;
     sword.position.set(targetPos.x, 26, targetPos.z);
@@ -1085,9 +1074,8 @@ export class ImmortalPlayer {
           sword.position.y = 0.8;
           if (!hitDone) {
             hitDone = true;
-            this.vfx.spawnSkyPillar(targetPos, 1.15, 22, color, 0.32);
-            this.vfx.spawnShockwave(targetPos, radius, color, 0.34);
-            this.vfx.burstParticles(targetPos.clone().setY(0.8), 14, color, 12, 6, 0.4);
+            this.vfx.spawnShockwave(targetPos, radius * 0.85, color, 0.32);
+            this.vfx.burstParticles(targetPos.clone().setY(0.8), 6, color, 9, 4, 0.32);
             const res = enemyManager.damageArea(targetPos, radius, damage, this.getCritChance(), {
               addSwordMarks: 1,
               inDomain: this.domainTimer > 0

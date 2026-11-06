@@ -19,7 +19,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'hi
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.06;
+renderer.toneMappingExposure = 0.88;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -30,9 +30,9 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.86, // strength
-  0.46, // radius
-  0.78  // threshold: 仅高发光剑气、法阵与神雷触发仙辉
+  0.22, // 大幅收敛辉光强度，彻底告别刺眼光污染
+  0.24, // 紧凑锐利半径
+  0.92  // 高阈值：仅极高光点有柔和微光，场景与招式清晰分明
 );
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());

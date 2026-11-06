@@ -53,7 +53,7 @@ export class EnemyManager {
       metalness: 0.75
     });
     const crimsonGlowMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0xff2e4c).multiplyScalar(2.2)
+      color: new THREE.Color(0xd92b48)
     });
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xe6b35a,
@@ -537,7 +537,7 @@ export class EnemyManager {
     const mesh = new THREE.Mesh(
       new THREE.SphereGeometry(radius, 10, 10),
       new THREE.MeshBasicMaterial({
-        color: new THREE.Color(colorHex).multiplyScalar(2.1)
+        color: new THREE.Color(colorHex).multiplyScalar(1.02)
       })
     );
     mesh.position.copy(origin);
@@ -636,17 +636,17 @@ export class EnemyManager {
 
       // 剑斩层数光环显隐与旋转
       if (e.swordMarks > 0) {
-        e.markRing.material.opacity = Math.min(0.92, 0.25 + e.swordMarks * 0.02);
+        e.markRing.material.opacity = Math.min(0.45, 0.14 + e.swordMarks * 0.01);
         e.markRing.rotation.z += dt * (2.2 + e.swordMarks * 0.08);
       } else {
         e.markRing.material.opacity = 0;
       }
 
-      // 受击闪光恢复
+      // 受击闪光恢复（克制微亮，避免高频连击下常驻过曝发白）
       if (e.flashTimer > 0) {
         e.flashTimer -= dt;
         const mat = e.isBoss ? e.armorMat : e.bodyMat;
-        if (mat) mat.emissiveIntensity = e.flashTimer > 0 ? 2.6 : e.isBoss && e.enraged ? 1.25 : 0.65;
+        if (mat) mat.emissiveIntensity = e.flashTimer > 0 ? 0.92 : e.isBoss && e.enraged ? 0.72 : 0.42;
       }
 
       if (e.isBoss) {
@@ -919,10 +919,9 @@ export class EnemyManager {
         const beamGroup = new THREE.Group();
         beamGroup.position.copy(boss.pos).setY(1.3);
         const beamMat = new THREE.MeshBasicMaterial({
-          color: new THREE.Color(0xff2458).multiplyScalar(2.6),
+          color: new THREE.Color(0xd92650),
           transparent: true,
-          opacity: 0.9,
-          blending: THREE.AdditiveBlending
+          opacity: 0.68
         });
         for (let k = 0; k < 4; k++) {
           const geo = new THREE.CylinderGeometry(0.38, 0.38, 36, 10);

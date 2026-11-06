@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { createSparkTexture } from './textures.js';
 
-// 飞剑流光丝带拖尾类
+// 飞剑流光丝带拖尾类（清脆纤细剑丝，不泛白糊屏）
 export class SwordRibbon {
-  constructor(scene, segments = 12, width = 0.34, colorHex = 0x68fff4) {
+  constructor(scene, segments = 8, width = 0.16, colorHex = 0x56d8cf) {
     this.scene = scene;
     this.segments = segments;
     this.width = width;
@@ -17,12 +17,12 @@ export class SwordRibbon {
     const colors = new Float32Array(vertCount * 3);
     const indices = [];
 
-    const baseColor = new THREE.Color(colorHex).multiplyScalar(1.9);
+    const baseColor = new THREE.Color(colorHex).multiplyScalar(0.92);
     this.baseColor = baseColor;
 
     for (let i = 0; i < segments; i++) {
       const ratio = 1 - i / (segments - 1); // 1(头) -> 0(尾)
-      const intensity = Math.pow(ratio, 1.5);
+      const intensity = Math.pow(ratio, 1.8);
       for (let side = 0; side < 2; side++) {
         const idx = (i * 2 + side) * 3;
         colors[idx] = baseColor.r * intensity;
@@ -46,9 +46,9 @@ export class SwordRibbon {
     const mat = new THREE.MeshBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.42,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending,
       depthWrite: false
     });
 
@@ -57,7 +57,7 @@ export class SwordRibbon {
     this.scene.add(this.mesh);
   }
 
-  setColor(colorHex, boost = 1.9) {
+  setColor(colorHex, boost = 0.92) {
     const c = new THREE.Color(colorHex).multiplyScalar(boost);
     const colorAttr = this.mesh.geometry.attributes.color;
     for (let i = 0; i < this.segments; i++) {
@@ -137,17 +137,18 @@ export class VFXManager {
     this.floatingTexts = [];
     this.textPool = [];
     this.lastTextTime = 0;
+    this.lastHitSlashTime = 0;
 
-    // 共享几何体缓存
-    this.ringGeo = new THREE.RingGeometry(0.76, 1.0, 42);
+    // 共享几何体缓存（纤细锐利剑纹环）
+    this.ringGeo = new THREE.RingGeometry(0.92, 1.0, 42);
     this.ringGeo.rotateX(-Math.PI / 2);
 
     this.discGeo = new THREE.CircleGeometry(1.0, 36);
     this.discGeo.rotateX(-Math.PI / 2);
 
-    this.slashBarGeo = new THREE.PlaneGeometry(1.0, 0.14);
+    this.slashBarGeo = new THREE.PlaneGeometry(1.0, 0.075);
 
-    this._initParticlePool(1800);
+    this._initParticlePool(1200);
   }
 
   _initParticlePool(maxCount) {
@@ -168,12 +169,12 @@ export class VFXManager {
     geo.setAttribute('color', new THREE.BufferAttribute(this.pCol, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: 0.72,
+      size: 0.34,
       map: createSparkTexture(),
       vertexColors: true,
       transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.52,
+      blending: THREE.NormalBlending,
       depthWrite: false
     });
 
@@ -182,10 +183,11 @@ export class VFXManager {
     this.scene.add(this.particlePoints);
   }
 
-  // 喷发剑气火花粒子
-  burstParticles(pos, count = 14, colorHex = 0x7efcf4, speed = 12, lift = 5, life = 0.45) {
-    const col = new THREE.Color(colorHex).multiplyScalar(1.6);
-    for (let n = 0; n < count; n++) {
+  // 喷发剑气火花粒子（克制星屑感，不糊屏）
+  burstParticles(pos, count = 8, colorHex = 0x5cdbd3, speed = 10, lift = 4.5, life = 0.38) {
+    const actualCount = Math.max(2, Math.ceil(count * 0.45));
+    const col = new THREE.Color(colorHex).multiplyScalar(0.92);
+    for (let n = 0; n < actualCount; n++) {
       const i = this.pCursor;
       this.pCursor = (this.pCursor + 1) % this.maxParticles;
 
@@ -209,14 +211,13 @@ export class VFXManager {
     }
   }
 
-  // 环形扩散剑气冲击波
-  spawnShockwave(pos, maxRadius = 6, colorHex = 0x6cf7ee, duration = 0.42, y = 0.08) {
+  // 环形扩散剑气冲击波（细线清透波纹）
+  spawnShockwave(pos, maxRadius = 6, colorHex = 0x5cdbd3, duration = 0.38, y = 0.08) {
     const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex).multiplyScalar(2.1),
+      color: new THREE.Color(colorHex).multiplyScalar(0.95),
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.42,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     const mesh = new THREE.Mesh(this.ringGeo, mat);
@@ -231,13 +232,17 @@ export class VFXManager {
       onUpdate(t) {
         const ease = 1 - Math.pow(1 - t, 3);
         mesh.scale.setScalar(0.3 + ease * maxRadius);
-        mat.opacity = (1 - t) * 0.9;
+        mat.opacity = (1 - t) * 0.42;
       }
     });
   }
 
-  // 飞剑命中十字斩裂闪光
-  spawnHitSlash(pos, colorHex = 0x9ffff8, scale = 2.6) {
+  // 飞剑命中十字斩裂闪光（加节流与缩小收敛，防止同目标叠成白球）
+  spawnHitSlash(pos, colorHex = 0x7cebe4, scale = 1.6) {
+    const now = performance.now();
+    if (now - this.lastHitSlashTime < 55) return;
+    this.lastHitSlashTime = now;
+
     const group = new THREE.Group();
     group.position.copy(pos);
     group.rotation.set(
@@ -247,18 +252,18 @@ export class VFXManager {
     );
 
     const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex).multiplyScalar(2.5),
+      color: new THREE.Color(colorHex).multiplyScalar(1.0),
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.48,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
 
+    const s = scale * 0.55;
     const m1 = new THREE.Mesh(this.slashBarGeo, mat);
-    m1.scale.set(scale, 1.2, 1);
+    m1.scale.set(s, 0.9, 1);
     const m2 = new THREE.Mesh(this.slashBarGeo, mat);
-    m2.scale.set(scale * 0.75, 1.0, 1);
+    m2.scale.set(s * 0.72, 0.8, 1);
     m2.rotation.z = Math.PI * 0.42;
     group.add(m1, m2);
     this.scene.add(group);
@@ -267,23 +272,22 @@ export class VFXManager {
       mesh: group,
       mat,
       age: 0,
-      duration: 0.16,
+      duration: 0.13,
       onUpdate(t) {
-        group.scale.setScalar(0.6 + t * 0.9);
-        mat.opacity = 1 - t;
+        group.scale.setScalar(0.65 + t * 0.6);
+        mat.opacity = (1 - t) * 0.48;
       }
     });
   }
 
-  // 地面残留发光剑痕
-  spawnGroundScar(pos, angle, length = 8, width = 0.45, colorHex = 0xffcf6e, duration = 2.2) {
-    const geo = new THREE.PlaneGeometry(length, width);
+  // 地面残留剑痕
+  spawnGroundScar(pos, angle, length = 8, width = 0.26, colorHex = 0xd9ad52, duration = 1.8) {
+    const geo = new THREE.PlaneGeometry(length, width * 0.65);
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex).multiplyScalar(1.8),
+      color: new THREE.Color(colorHex).multiplyScalar(0.95),
       transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.42,
       depthWrite: false
     });
     const mesh = new THREE.Mesh(geo, mat);
@@ -298,13 +302,13 @@ export class VFXManager {
       age: 0,
       duration,
       onUpdate(t) {
-        mat.opacity = (1 - Math.pow(t, 1.6)) * 0.85;
+        mat.opacity = (1 - Math.pow(t, 1.6)) * 0.42;
       }
     });
   }
 
-  // 紫霄神雷 / 诛仙雷光柱连接线
-  spawnLightning(p1, p2, colorHex = 0x8cc2ff, segments = 9, jitter = 0.75, duration = 0.22) {
+  // 紫霄神雷 / 诛仙雷光连接细线
+  spawnLightning(p1, p2, colorHex = 0x7cb2f0, segments = 9, jitter = 0.65, duration = 0.18) {
     const pts = [];
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
@@ -318,10 +322,9 @@ export class VFXManager {
     }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
     const mat = new THREE.LineBasicMaterial({
-      color: new THREE.Color(colorHex).multiplyScalar(2.6),
+      color: new THREE.Color(colorHex).multiplyScalar(1.05),
       transparent: true,
-      opacity: 1.0,
-      blending: THREE.AdditiveBlending
+      opacity: 0.72
     });
     const line = new THREE.Line(geo, mat);
     this.scene.add(line);
@@ -333,22 +336,21 @@ export class VFXManager {
       age: 0,
       duration,
       onUpdate(t) {
-        mat.opacity = 1 - t;
+        mat.opacity = (1 - t) * 0.72;
       }
     });
   }
 
-  // 太上诛仙阵专属：立体空间裂痕次元斩带
-  spawnDimensionRift(p1, p2, colorHex = 0xff3b56, heightWidth = 0.7, duration = 0.55) {
+  // 太上诛仙阵专属：纤细锐利的空间裂痕剑丝
+  spawnDimensionRift(p1, p2, colorHex = 0xd9364f, heightWidth = 0.24, duration = 0.42) {
     const dist = p1.distanceTo(p2);
     const mid = p1.clone().add(p2).multiplyScalar(0.5);
-    const geo = new THREE.PlaneGeometry(dist, heightWidth);
+    const geo = new THREE.PlaneGeometry(dist, Math.min(0.28, heightWidth * 0.35));
     const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex).multiplyScalar(2.8),
+      color: new THREE.Color(colorHex).multiplyScalar(1.08),
       transparent: true,
-      opacity: 1,
+      opacity: 0.68,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     const mesh = new THREE.Mesh(geo, mat);
@@ -365,25 +367,26 @@ export class VFXManager {
       age: 0,
       duration,
       onUpdate(t) {
-        mesh.scale.y = (1 - t) * 1.4;
-        mat.opacity = 1 - t * t;
+        mesh.scale.y = 1 - t;
+        mat.opacity = (1 - t * t) * 0.68;
       }
     });
   }
 
-  // 垂直通天剑柱光束（天罡落剑、诛仙爆柱）
-  spawnSkyPillar(pos, radius = 1.6, height = 34, colorHex = 0xffd573, duration = 0.55) {
-    const geo = new THREE.CylinderGeometry(radius * 0.65, radius, height, 18, 1, true);
+  // 垂直剑罡气柱（高度收敛、清透薄纱质感，绝不糊挡镜头）
+  spawnSkyPillar(pos, radius = 1.2, height = 12, colorHex = 0xd9b25f, duration = 0.42) {
+    const clampedH = Math.min(16, height * 0.38);
+    const clampedR = radius * 0.65;
+    const geo = new THREE.CylinderGeometry(clampedR * 0.5, clampedR, clampedH, 16, 1, true);
     const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(colorHex).multiplyScalar(2.2),
+      color: new THREE.Color(colorHex).multiplyScalar(0.95),
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.22,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(pos.x, height * 0.5, pos.z);
+    mesh.position.set(pos.x, clampedH * 0.5, pos.z);
     this.scene.add(mesh);
 
     this.transientMeshes.push({
@@ -393,9 +396,9 @@ export class VFXManager {
       age: 0,
       duration,
       onUpdate(t) {
-        const s = 1 - t * 0.65;
+        const s = 1 - t * 0.55;
         mesh.scale.set(s, 1, s);
-        mat.opacity = (1 - t) * 0.85;
+        mat.opacity = (1 - t) * 0.22;
       }
     });
   }

@@ -54,15 +54,15 @@ html, body {
 }
 
 #screen-vignette.domain-active {
-  box-shadow: inset 0 0 110px rgba(235, 185, 70, 0.28), inset 0 0 40px rgba(80, 220, 255, 0.18);
+  box-shadow: inset 0 0 85px rgba(0, 0, 0, 0.68), inset 0 0 28px rgba(212, 175, 90, 0.1);
 }
 
 #screen-vignette.immortal-active {
-  box-shadow: inset 0 0 150px rgba(230, 35, 55, 0.45), inset 0 0 50px rgba(255, 210, 90, 0.35);
+  box-shadow: inset 0 0 95px rgba(0, 0, 0, 0.72), inset 0 0 36px rgba(185, 35, 50, 0.16);
 }
 
 #screen-vignette.hurt-flash {
-  box-shadow: inset 0 0 130px rgba(220, 20, 20, 0.68);
+  box-shadow: inset 0 0 95px rgba(190, 24, 24, 0.42);
 }
 
 /* ================= 伤害跳字 ================= */
